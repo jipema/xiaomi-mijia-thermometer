@@ -1,6 +1,6 @@
 {
     "name": "xiaomi-mijia-thermometer",
-    "version": "1.0.0",
+    "version": "0.9.9",
     "description": "Discover and read data from Xiaomi Mijia Bluetooth Thermometer 2 (aka LYWSD03MMC)",
     "author": "Jipema",
     "private": false,
@@ -22,7 +22,8 @@
     ],
     "main": "example.js",
     "scripts": {
-        "test": "node example.js"
+        "start": "node example.js",
+        "test": "echo \"No test specified yet, sorry about that.\" && exit 0"
     },
     "dependencies": {
         "@abandonware/noble": "^1.9.2-5"

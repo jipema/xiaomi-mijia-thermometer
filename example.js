@@ -1,4 +1,4 @@
-const Mijia = require('./MijiaThermometer');
+const Mijia = require('./XiaomiMijiaThermometer');
 
 const ALIASES = {
    'a4:c1:38:9b:80:d6': 'bedroom-blue',

@@ -20,7 +20,7 @@
         "domotic",
         "nodejs"
     ],
-    "main": "example.js",
+    "main": "XiaomiMijiaThermometer.js",
     "scripts": {
         "start": "node example.js",
         "test": "echo \"No test specified yet, sorry about that.\" && exit 0"

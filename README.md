@@ -2,6 +2,7 @@
 
 Discover and read data from (less than $6) Xiaomi Mijia Bluetooth Thermometer 2 (aka LYWSD03MMC).
 
+Available on npm:  ``xiaomi-mijia-thermometer``.
 Tested on Mac & Raspberry Pi 4 (sudo required).
 
 ## Roadmap

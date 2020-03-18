@@ -3,7 +3,7 @@ const Mijia = require('./XiaomiMijiaThermometer');
 const ALIASES = {
    'a4:c1:38:9b:80:d6': 'bedroom-blue',
    'a4:c1:38:48:69:4c': 'bedroom-grey',
-   'a4:c1:38:e3:71:3d': 'balcon'
+   'a4:c1:38:e3:71:3d': 'balcony'
 };
 
 // Discover thermometers
@@ -14,9 +14,9 @@ const stop = Mijia.discover(async function (device, devices) {
    const address = device && device.specs && device && device.specs.address;
 
    let count = 0;
-   for(let key in devices){
+   for (let key in devices) {
       const dev = devices[key];
-      if(ALIASES[dev && dev.specs && dev.specs.id] || ALIASES[dev && dev.specs && dev.specs.address])count++;
+      if (ALIASES[dev && dev.specs && dev.specs.id] || ALIASES[dev && dev.specs && dev.specs.address]) count++;
    }
    const total = Object.keys(ALIASES).length;
    console.log('- Device discovered', alias, address, id, rssi, count + '/' + total);
@@ -44,14 +44,14 @@ function collectData(devices) {
 
    const out = {};
    return promiseEach(keys, async function (id) {
-   //return Promise.each(keys, async function (id) {
+      //return Promise.each(keys, async function (id) {
       const alias = id && ALIASES[id];
       console.log('- getting data for', alias, id);
       const data = devices[id] && devices[id].getData && await devices[id].getData();
       console.log('- data received for', alias, id);
       data.alias = alias;
       data.id = id;
-      out[alias||id] = data;
+      out[alias || id] = data;
    }).then(function () {
       console.log('-> Collecting data DONE');
       console.log(out);

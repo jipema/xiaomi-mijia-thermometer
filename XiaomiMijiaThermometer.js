@@ -11,29 +11,38 @@ mijia.discover = function discover(onDiscover, onTimeout, timeoutSeconds = 120, 
    let timeout;
    const devices = {};
 
-   const stop = function () {
+   const stop = async function () {
       if (timeout) timeout = clearTimeout(timeout);
       done = new Date();
-      noble.stopScanning();
+      await noble.stopScanning();
+      console.log('[xiaomi-mijia-thermometer] stop scanning', Object.keys(devices));
       return devices;
    }
    if (onTimeout) {
-      timeout = setTimeout(function () {
-         stop();
+      timeout = setTimeout(async function () {
+         await stop();
          onTimeout(devices);
       }, timeoutSeconds * 1000);
    }
    noble.on('stateChange', function (state) {
       if (done) return;
       if (state === 'poweredOn') {
-         console.log('[xiaomi-mijia-thermometer] start scanning...', { timeoutSeconds, uuidFilter, specs });
+         noble.isOn = true;
+         console.log('[xiaomi-mijia-thermometer] powerOn');
          noble.startScanning(!uuidFilter ? undefined : [uuidFilter], false);
       } else {
-         console.log('[xiaomi-mijia-thermometer] stop scanning...', { devices });
+         noble.isOn = false;
+         console.log('[xiaomi-mijia-thermometer] powerOff', { devices });
          noble.stopScanning();
       }
    });
 
+   noble.once('scanStart', function () {
+      console.log('[xiaomi-mijia-thermometer] start scanning...', { timeoutSeconds, uuidFilter, specs });
+   });
+   noble.once('scanStop', function () {
+      console.log('[xiaomi-mijia-thermometer] stopped scanning.');
+   });
    noble.on('discover', function (device) {
       if (done) return;
 
@@ -51,6 +60,12 @@ mijia.discover = function discover(onDiscover, onTimeout, timeoutSeconds = 120, 
       if (onDiscover) onDiscover(device, devices);
    });
 
+   //dont wait for powerOn state change if alrady on
+   if (noble && noble.isOn) {
+      console.log('[xiaomi-mijia-thermometer] alreadyOn');
+      noble.startScanning(!uuidFilter ? undefined : [uuidFilter], false);
+   }
+
    return stop;
 }
 mijia.getData = function getData(device, deviceSpecs = DEFAULT_SPECS, timeoutSeconds = 60) {
@@ -63,37 +78,37 @@ mijia.getData = function getData(device, deviceSpecs = DEFAULT_SPECS, timeoutSec
       let timeout;
       let done;
       const stop = function () {
-         console.log('[xiaomi-mijia-thermometer] device done', device && device.specs && (device.specs.address||device.specs.id), device && device.disconnect);
-         const endId = function(){
+         //console.log('[xiaomi-mijia-thermometer] device done', device && device.specs && (device.specs.address || device.specs.id), device && device.disconnect);
+         const endId = function () {
             done = new Date();
             if (timeout) timeout = clearTimeout(timeout);
             const end = new Date();
             out.duration = end.getTime() - start.getTime();
             return ok(out);
          }
-         if(device.connected && device.disconnect){
+         if (device.connected && device.disconnect) {
             device.once('disconnect', endId);
             device.disconnect();
-         }else{
+         } else {
             endId();
          }
       }
 
       //timeout
       if (timeoutSeconds) {
-         timeout = setTimeout(function () {
+         timeout = setTimeout(async function () {
             out.timeout = true;
-            stop();
+            await stop();
          }, timeoutSeconds * 1000);
       }
 
       device.on('disconnect', function () {
-         console.log('[xiaomi-mijia-thermometer] device disconnected', device && device.specs && (device.specs.address||device.specs.id));
+         console.log('[xiaomi-mijia-thermometer] device disconnected', device && device.specs && (device.specs.address || device.specs.id));
          device.connected = false;
       });
       device.once('connect', function () {
          device.connected = new Date();
-         console.log('[xiaomi-mijia-thermometer] device connected', device && device.specs && (device.specs.address||device.specs.id));
+         //console.log('[xiaomi-mijia-thermometer] device connected', device && device.specs && (device.specs.address || device.specs.id));
          if (done) return;
 
          const onData = function (data, type) {
@@ -111,16 +126,16 @@ mijia.getData = function getData(device, deviceSpecs = DEFAULT_SPECS, timeoutSec
                return ko('invalidSpecs');
             }
             if (done) return;
-            
+
             for (let spec of specs) {
                if (!spec || !spec.uuid || !spec.properties || !spec.read) continue;
                const type = deviceSpecs[spec.uuid] || deviceSpecs[String(spec.uuid)];
-               console.log('[xiaomi-mijia-thermometer] device waiting for spec data..', type, device && device.specs && (device.specs.address||device.specs.id));
+               //console.log('[xiaomi-mijia-thermometer] device waiting for spec data..', type, device && device.specs && (device.specs.address || device.specs.id));
                if (!type) continue;
 
                if (type === 'battery') {
                   spec.read(function (err, data) {
-                     console.log('[xiaomi-mijia-thermometer] device spec data received', type, device && device.specs && (device.specs.address||device.specs.id));
+                     //console.log('[xiaomi-mijia-thermometer] device spec data received', type, device && device.specs && (device.specs.address || device.specs.id));
                      onData(data, type);
                   });
                } else {
@@ -130,7 +145,7 @@ mijia.getData = function getData(device, deviceSpecs = DEFAULT_SPECS, timeoutSec
                   });*/
                   spec.subscribe();
                   spec.on('data', function (data) {
-                     console.log('[xiaomi-mijia-thermometer] device spec received', type || spec.uuid, device && device.specs && (device.specs.address||device.specs.id));
+                     //console.log('[xiaomi-mijia-thermometer] device spec received', type || spec.uuid, device && device.specs && (device.specs.address || device.specs.id));
                      spec.unsubscribe();
                      onData(data, type);
                   });
@@ -139,9 +154,9 @@ mijia.getData = function getData(device, deviceSpecs = DEFAULT_SPECS, timeoutSec
          });
       });
 
-      console.log('[xiaomi-mijia-thermometer] connecting to device...', device && device.specs && (device.specs.address||device.specs.id));
+      //console.log('[xiaomi-mijia-thermometer] connecting to device...', device && device.specs && (device.specs.address || device.specs.id));
       device.connect();
-   }).catch(function(error){
+   }).catch(function (error) {
       console.log('[xiaomi-mijia-thermometer] getData error', error);
    })
 }
